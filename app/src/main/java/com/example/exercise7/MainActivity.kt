@@ -16,38 +16,83 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.internal.composableLambda
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.exercise7.ui.theme.Exercise7Theme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Exercise7Theme {
-                ContactListScreen(contacts = contactList)
+            val navController = rememberNavController()
+            NavHost(navController = navController, "home") {
+                composable("home") {
+                    ContactListScreen(
+                        contactList,
+                        navigateToDetail = { name, number ->
+                            navController.navigate("contactDetail/$name/$number")
+                        }
+                    )
+                }
+                composable(
+                    "contactDetail/{name}/{number}",
+                    arguments = listOf(
+                        navArgument("name") {
+                            type = NavType.StringType
+                            nullable = true
+                        },
+                        navArgument("number") {
+                            type = NavType.StringType
+                            nullable = true
+                        }
+                    )
+                ) { entry ->
+                    val name = entry.arguments?.getString("name")!!
+                    val number = entry.arguments?.getString("number")!!
+
+                    ContactDetailScreen(name, number)
+                }
             }
         }
+    }
+
+    private fun ContactListScreen(navigateToDetail: Any) {
+
+
     }
 }
 
 @Composable
-fun ContactListScreen(contacts: List<Contact>) {
-    LazyColumn (
-        verticalArrangement =Arrangement.spacedBy(5.dp),
+fun ContactListScreen(
+    contacts: List<Contact>,
+    navigateToDetail: (name: String, phoneNumber: String) -> Unit
+) {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(5.dp),
         contentPadding = PaddingValues(14.dp)
-    ){
+    ) {
         itemsIndexed(contacts) { _, contact ->
-            Column (
-                Modifier.clickable{
-                    Log.d("TAG", "ContactItem: ${contact.name}")
-                }.fillMaxWidth().clip(RoundedCornerShape(12.dp)).border(3.dp,Color.Black,
-                    RoundedCornerShape(12.dp)
-                )
-            ){
+            Column(
+                Modifier
+                    .clickable {
+                        navigateToDetail(contact.name, contact.phoneNumber)
+                    }
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(
+                        3.dp, Color.Black,
+                        RoundedCornerShape(12.dp)
+                    )
+            ) {
                 Text(
                     text = contact.name,
                     fontSize = 20.sp,
@@ -65,3 +110,4 @@ fun ContactListScreen(contacts: List<Contact>) {
         }
     }
 }
+
